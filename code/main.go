@@ -31,27 +31,27 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
 		new_user(connection, w, r)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/log-in", func(w http.ResponseWriter, r *http.Request) {
 		log_in(connection, w, r)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/new-note", func(w http.ResponseWriter, r *http.Request) {
 		new_note(connection, w, r)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/mod-note", func(w http.ResponseWriter, r *http.Request) {
 		modify_note(connection, w, r)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/delete-note", func(w http.ResponseWriter, r *http.Request) {
 		delete_note(connection, w, r)
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/read-note", func(w http.ResponseWriter, r *http.Request) {
 		read_note(connection, w, r)
 	})
 	http.ListenAndServe(":8080", nil)
