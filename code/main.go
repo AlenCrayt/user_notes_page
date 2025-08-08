@@ -24,7 +24,7 @@ type Note struct
 }
 
 func main() {
-	connection, err := pgx.Connect(context.Background(), "postgres://postgres:los_datos_caidos@192.168.1.29:5432/notes_page");
+	connection, err := pgx.Connect(context.Background(), "postgres://los_datos_caidos@localhost:5432/notes_page");
 	
 	if err != nil {
 		fmt.Println("Error connecting to the database");
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
-		new_user(connection, w, r)
+		w.Write([]byte("Bostero"))
 	})
 
 	http.HandleFunc("/log-in", func(w http.ResponseWriter, r *http.Request) {
@@ -133,10 +133,7 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
 			HttpOnly: true,
 		}
 		http.SetCookie(resp, &cookie)
-		var usid int
-		db.QueryRow(context.Background(), "SELECT id FROM users WHERE username = $1 AND password = $2", sent_log_in_data.username, sent_log_in_data.password).Scan(&usid)
-		//store it in a database table?
-		db.QueryRow(context.Background(), "INSERT INTO sessions (id, user_id) VALUES ($1, $2)", session_id, usid)
+		//don't store it in a database table, use variables in memory instead
 		//send it to the user
 	} else {
 		//send a response saying the user doesn't exist
