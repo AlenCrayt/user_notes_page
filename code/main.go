@@ -24,19 +24,20 @@ type Note struct
 }
 
 func main() {
-	connection, err := pgx.Connect(context.Background(), "postgres://los_datos_caidos@localhost:5432/notes_page");
+	connection, err := pgx.Connect(context.Background(), "postgres://postgres:los_datos_caidos@localhost:5432/notes_page");
 	
 	if err != nil {
 		fmt.Println("Error connecting to the database");
 		return
 	}
 
-	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Bostero"))
-	})
-
+	//this endpoint is triggered when the user clicks the log-in button in the page that is served in /
 	http.HandleFunc("/log-in", func(w http.ResponseWriter, r *http.Request) {
 		log_in(connection, w, r)
+	})
+
+	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
+		new_user(connection, w, r)
 	})
 
 	http.HandleFunc("/new-note", func(w http.ResponseWriter, r *http.Request) {
@@ -54,28 +55,10 @@ func main() {
 	http.HandleFunc("/read-note", func(w http.ResponseWriter, r *http.Request) {
 		read_note(connection, w, r)
 	})
+	//initial web page at / is the log in screen
+	webpage := http.FileServer(http.Dir("./web_page"))
+	http.Handle("/", webpage)
 	http.ListenAndServe(":8080", nil)
-		var name string;
-		fmt.Scan(&name);
-		create_row, err := connection.Query(context.Background(), "INSERT INTO users (name) VALUES ($1)", name);
-		if err != nil {
-			fmt.Println("error querying db")
-			return
-		}
-		create_row.Close();
-		//funciona y esta enviando el valor a la base de datos, el problema es que no se esta creando un arreglo o leyendo bien los row retornados por Query()
-		returned_row, err := connection.Query(context.Background(), "SELECT name FROM users");
-		if err != nil {
-			fmt.Println("error querying db with SELECT")
-			return
-		}
-		names, err := pgx.CollectRows(returned_row, pgx.RowTo[string])
-		if err != nil {
-			fmt.Println("error collecting rows")
-			return
-		}
-		fmt.Println(names);
-		returned_row.Close();
 }
 
 func new_user(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
@@ -120,10 +103,11 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var exists bool
+	var session_id int
 	db.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND password = $2)", sent_log_in_data.username, sent_log_in_data.password).Scan(&exists)
 	if exists {
-		//create a session ID
-		session_id := rand.Intn(2000000)
+		//store a randomly generated session ID
+		session_id = rand.Intn(2000000)
 		cookie := http.Cookie {
 			Name: "session",
 			Value: strconv.Itoa(session_id),
