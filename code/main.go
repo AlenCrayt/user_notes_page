@@ -56,7 +56,7 @@ func main() {
 		read_note(connection, w, r)
 	})
 	//initial web page at / is the log in screen
-	webpage := http.FileServer(http.Dir("./web_page"))
+	webpage := http.FileServer(http.Dir("./page"))
 	http.Handle("/", webpage)
 	http.ListenAndServe(":8080", nil)
 }
