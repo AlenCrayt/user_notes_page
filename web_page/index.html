@@ -16,7 +16,11 @@
         <input class="bg-white" type="text" name="username" />
         <label>Password:</label>
         <input class="bg-white" type="password" name="password" />
-        <button class="mt-4 bg-blue-300 p-2 rounded-2xl" hx-post="/log-in">
+        <button
+          class="mt-4 bg-blue-300 p-2 rounded-2xl"
+          hx-post="/log-in"
+          hx-swap="none"
+        >
           Submit
         </button>
       </form>

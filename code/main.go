@@ -3,25 +3,24 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/schema"
 	"github.com/jackc/pgx/v5"
 )
 
-var decoder = schema.NewDecoder()
-
-type User struct {
-	username string `schema:"username"`
-	password string `schema:"password"`
+type User struct 
+{
+	username string
+	password string
 }
 
 type Note struct
 {
-	note_name string `schema:"name"`
-	content string `schema:"content"`
+	note_name string
+	content string
 }
 
 func main() {
@@ -33,11 +32,8 @@ func main() {
 	}
 
 	//this endpoint is triggered when the user clicks the log-in button in the page that is served in /
-	http.HandleFunc("/log-in", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			fmt.Println("Received a request of type POST")
-			log_in(connection, w, r)
-		}
+	http.HandleFunc("POST /log-in", func(w http.ResponseWriter, r *http.Request) {
+		log_in(connection, w, r)
 	})
 
 	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
@@ -66,21 +62,7 @@ func main() {
 }
 
 func new_user(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
-	decoder := schema.NewDecoder()
-	var sent_user User
-	err := req.ParseForm()
-	if err != nil {
-		fmt.Println("Error parsing form for new user")
-		resp.WriteHeader(500)
-		return
-	}
-	err = decoder.Decode(&sent_user, req.PostForm)
-	if err != nil {
-		fmt.Println("Error decoding user")
-		resp.WriteHeader(500)
-		return
-	}
-	created_user, err := db.Query(context.Background(), "INSERT INTO users (username, password) VALUES ($1, $2)", sent_user.username, sent_user.password)
+	created_user, err := db.Query(context.Background(), "INSERT INTO users (username, password) VALUES ($1, $2)", "", "")
 	if err != nil {
 		fmt.Println("Error querying DB for new user")
 		resp.WriteHeader(500)
@@ -92,36 +74,34 @@ func new_user(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
 
 func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 	//need to create a session ID for the user, this lasts for the duration of the session which is refreshed with further actions from the user
-	var sent_log_in_data User
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Println("Error parsing log in form")
 		resp.WriteHeader(500)
 		return
 	}
-	fmt.Println(r.PostForm)
+	fmt.Println(r.PostFormValue("username") + r.PostFormValue("password"))
 	//assuming the problem isn't in the front end then the problem would be as follows:
 	//decoder.Decode() isn't correctly putting the values in the struct
 	//instead of using the decoder, manually handle the form data by looping over it using http.NewServeMux()?
-	err = decoder.Decode(&sent_log_in_data, r.PostForm)
-	if err != nil {
-		fmt.Println("Error decoding log in data")
-		resp.WriteHeader(500)
-	}
 	var exists bool
 	var session_id int
-	//the User struct is empty
-	fmt.Println(sent_log_in_data)
-	fmt.Println(sent_log_in_data.password)
-	db.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND password = $2)", sent_log_in_data.username, sent_log_in_data.password).Scan(&exists)
+	db.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND password = $2)", r.PostFormValue("username"), r.PostFormValue("password")).Scan(&exists)
 	if exists {
 		//store a randomly generated session ID
+		//this header does seem to be received by the user
+		//resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		resp.WriteHeader(http.StatusOK)
+		//directly causes DOM text to be swapped by it, response successfully received
+		io.WriteString(resp, "Message about cookies trying to be sent")
 		session_id = rand.Intn(2000000)
+		fmt.Println("The session id for the user is: " + strconv.Itoa(session_id))
+		//the client doesn't seem to be receiving the cookie or at least the values aren't visible currently
 		cookie := http.Cookie {
 			Name: "session",
-			Value: strconv.Itoa(session_id),
+			Value: "455",
 			Domain: "192.168.1.29",
-			Path: "/",
+			Path: "/notes",
 			MaxAge: 60 * 60,
 			HttpOnly: true,
 		}
@@ -139,23 +119,11 @@ func log_out(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
 }
 
 func new_note(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
-	decoder := schema.NewDecoder()
-	err := req.ParseForm()
-	if err != nil {
-		fmt.Println("Error parsing form")
-	}
-	var note Note
-	err = decoder.Decode(&note, req.PostForm)
-	if err != nil {
-		fmt.Println("Error decoding form")
-	}
 	db_note, err := db.Query(context.Background(), "INSERT INTO notes")
 	if err != nil {
 		fmt.Println("Error querying DB for a new note")
 	}
 	db_note.Close()
-	fmt.Println(note.note_name)
-	fmt.Println(note.content)
 }
 
 func delete_note(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
