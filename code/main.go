@@ -11,10 +11,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type User struct 
-{
-	username string
-	password string
+var decoder = schema.NewDecoder()
+
+type User struct {
+	username string `schema:"username"`
+	password string `schema:"password"`
 }
 
 type Note struct
@@ -33,7 +34,10 @@ func main() {
 
 	//this endpoint is triggered when the user clicks the log-in button in the page that is served in /
 	http.HandleFunc("/log-in", func(w http.ResponseWriter, r *http.Request) {
-		log_in(connection, w, r)
+		if r.Method == "POST" {
+			fmt.Println("Received a request of type POST")
+			log_in(connection, w, r)
+		}
 	})
 
 	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
@@ -86,24 +90,29 @@ func new_user(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
 	resp.WriteHeader(200)
 }
 
-func log_in(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
+func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 	//need to create a session ID for the user, this lasts for the duration of the session which is refreshed with further actions from the user
-	decoder := schema.NewDecoder()
 	var sent_log_in_data User
-	err := req.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Println("Error parsing log in form")
 		resp.WriteHeader(500)
 		return
 	}
-	err = decoder.Decode(&sent_log_in_data, req.PostForm)
+	fmt.Println(r.PostForm)
+	//assuming the problem isn't in the front end then the problem would be as follows:
+	//decoder.Decode() isn't correctly putting the values in the struct
+	//instead of using the decoder, manually handle the form data by looping over it using http.NewServeMux()?
+	err = decoder.Decode(&sent_log_in_data, r.PostForm)
 	if err != nil {
 		fmt.Println("Error decoding log in data")
 		resp.WriteHeader(500)
-		return
 	}
 	var exists bool
 	var session_id int
+	//the User struct is empty
+	fmt.Println(sent_log_in_data)
+	fmt.Println(sent_log_in_data.password)
 	db.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND password = $2)", sent_log_in_data.username, sent_log_in_data.password).Scan(&exists)
 	if exists {
 		//store a randomly generated session ID
@@ -121,6 +130,7 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, req *http.Request) {
 		//send it to the user
 	} else {
 		//send a response saying the user doesn't exist
+		fmt.Println("Log in data doesn't correspond to an existing user")
 	}
 }
 

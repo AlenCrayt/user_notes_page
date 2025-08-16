@@ -6,17 +6,19 @@
     <link href="./output.css" rel="stylesheet" />
     <title>Notes: Sign In</title>
   </head>
-  <body class="flex flex-col items-center justify-center">
+  <body class="flex flex-col items-center justify-center bg-gray-800">
     <article
       class="bg-gray-400 flex flex-col items-center justify-center w-96 h-96 m-20 rounded-2xl"
     >
       <form class="flex flex-col justify-center items-center">
         <h1 class="mb-4 text-4xl">Log In</h1>
         <label>Username:</label>
-        <input class="bg-white" />
+        <input class="bg-white" type="text" name="username" />
         <label>Password:</label>
-        <input class="bg-white" />
-        <button class="mt-4 bg-blue-300 p-2 rounded-2xl">Submit</button>
+        <input class="bg-white" type="password" name="password" />
+        <button class="mt-4 bg-blue-300 p-2 rounded-2xl" hx-post="/log-in">
+          Submit
+        </button>
       </form>
       <a class="text-center text-blue-800 w-60 mt-4"
         >Don't have a User? Sign Up</a
