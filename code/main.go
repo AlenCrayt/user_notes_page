@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
+	"html/template"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -11,16 +11,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type User struct 
+type Message struct
 {
-	username string
-	password string
-}
-
-type Note struct
-{
-	note_name string
-	content string
+	Msg string
 }
 
 func main() {
@@ -81,19 +74,25 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(r.PostFormValue("username") + r.PostFormValue("password"))
-	//assuming the problem isn't in the front end then the problem would be as follows:
-	//decoder.Decode() isn't correctly putting the values in the struct
 	//instead of using the decoder, manually handle the form data by looping over it using http.NewServeMux()?
 	var exists bool
 	var session_id int
 	db.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND password = $2)", r.PostFormValue("username"), r.PostFormValue("password")).Scan(&exists)
+	//if the user exists in the db send a new HTML template, if it doesn't only send a warning
+	//can I efficiently implement conditional server-side logic to send only the minimum amount of HTML needed for the user to understand
 	if exists {
-		//store a randomly generated session ID
-		//this header does seem to be received by the user
 		//resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		resp.WriteHeader(http.StatusOK)
-		//directly causes DOM text to be swapped by it, response successfully received
-		io.WriteString(resp, "Message about cookies trying to be sent")
+		//sending a new HTML template to be swapped into the existing DOM
+		t, err := template.ParseFiles("./page/notes.html")
+		if err != nil {
+			fmt.Println(err)
+		}
+		m := Message{"This are your notes"}
+		err = t.Execute(resp, m)
+		if err != nil {
+			fmt.Println(err)
+		}
 		session_id = rand.Intn(2000000)
 		fmt.Println("The session id for the user is: " + strconv.Itoa(session_id))
 		//the client doesn't seem to be receiving the cookie or at least the values aren't visible currently
@@ -111,6 +110,7 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 	} else {
 		//send a response saying the user doesn't exist
 		fmt.Println("Log in data doesn't correspond to an existing user")
+		resp.WriteHeader(http.StatusNotFound)
 	}
 }
 
