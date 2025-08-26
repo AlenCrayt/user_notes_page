@@ -79,11 +79,11 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 	db.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM users WHERE username = $1 AND password = $2)", r.PostFormValue("username"), r.PostFormValue("password")).Scan(&exists)
 	//if the user exists in the db send a new HTML template, if it doesn't only send a warning
 	//can I efficiently implement conditional server-side logic to send only the minimum amount of HTML needed for the user to understand
-	t, err := template.ParseFiles("./page/notes.html")
-	if err != nil {
-		fmt.Println(err)
-	}
 	if exists {
+		t, err := template.ParseFiles("./page/notes.html")
+		if err != nil {
+			fmt.Println(err)
+		}
 		//resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		resp.WriteHeader(http.StatusOK)
 		//sending a new HTML template to be swapped into the existing DOM
@@ -104,6 +104,10 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 		//don't store it in a database table, use variables in memory instead
 		//send it to the user
 	} else {
+		t, err := template.ParseFiles("./page/form.html")
+		if err != nil {
+			fmt.Println(err)
+		}
 		//send a response saying the user doesn't exist
 		fmt.Println("Log in data doesn't correspond to an existing user")
 		resp.WriteHeader(http.StatusOK)

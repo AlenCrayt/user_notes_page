@@ -1,0 +1,16 @@
+<form class="flex flex-col justify-center items-center">
+  <h1 class="mb-4 text-4xl">Log In</h1>
+  <label>Username:</label>
+  <input class="bg-white" type="text" name="username" />
+  <label>Password:</label>
+  <input class="bg-white" type="password" name="password" />
+  <h3>{{.Msg}}</h3>
+  <button
+    class="mt-4 bg-blue-300 p-2 rounded-2xl"
+    hx-post="/log-in"
+    hx-swap="outerHTML"
+    hx-target="form"
+  >
+    Submit
+  </button>
+</form>
