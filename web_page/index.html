@@ -11,7 +11,7 @@
       class="bg-gray-400 flex flex-col items-center justify-center w-96 h-96 m-20 rounded-2xl"
     >
       <form class="flex flex-col justify-center items-center">
-        <h1 class="mb-4 text-4xl">Log In</h1>
+        <h1 class="mb-4 text-4xl">Notes</h1>
         <label>Username:</label>
         <input class="bg-white" type="text" name="username" />
         <label>Password:</label>
@@ -22,12 +22,16 @@
           hx-swap="outerHTML"
           hx-target="form"
         >
-          Submit
+          Sign In
         </button>
+        <a
+          class="text-center text-blue-800 w-60 mt-4"
+          hx-get="/create-user"
+          hx-target="body"
+          hx-swap="outerHTML"
+          >Don't have a User? Sign Up</a
+        >
       </form>
-      <a class="text-center text-blue-800 w-60 mt-4"
-        >Don't have a User? Sign Up</a
-      >
     </article>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js"></script>
   </body>

@@ -11,8 +11,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type Message struct {
-	Msg string
+type User struct
+{
+	Name string
 }
 
 func main() {
@@ -28,11 +29,20 @@ func main() {
 		log_in(connection, w, r)
 	})
 
-	http.HandleFunc("/create-user", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /create-user", func(w http.ResponseWriter, r *http.Request) {
+		t, err := template.ParseFiles("./page/signup.html")
+		if err != nil {
+			fmt.Println(err)
+		}
+		w.WriteHeader(http.StatusOK)
+		t.Execute(w, nil)
+	})
+
+	http.HandleFunc("POST /create-user", func(w http.ResponseWriter, r *http.Request) {
 		new_user(connection, w, r)
 	})
 
-	http.HandleFunc("/new-note", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("POST/new-note", func(w http.ResponseWriter, r *http.Request) {
 		new_note(connection, w, r)
 	})
 
@@ -80,14 +90,14 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 	//if the user exists in the db send a new HTML template, if it doesn't only send a warning
 	//can I efficiently implement conditional server-side logic to send only the minimum amount of HTML needed for the user to understand
 	if exists {
-		t, err := template.ParseFiles("./page/notes.html")
+		t, err := template.ParseFiles("./page/menu.html")
 		if err != nil {
 			fmt.Println(err)
 		}
 		//resp.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		resp.WriteHeader(http.StatusOK)
 		//sending a new HTML template to be swapped into the existing DOM
-		m := Message{"This are your notes"}
+		m := User{r.PostFormValue("username")}
 		t.Execute(resp, m)
 		session_id = rand.Intn(2000000)
 		fmt.Println("The session id for the user is: " + strconv.Itoa(session_id))
@@ -111,7 +121,7 @@ func log_in(db *pgx.Conn, resp http.ResponseWriter, r *http.Request) {
 		//send a response saying the user doesn't exist
 		fmt.Println("Log in data doesn't correspond to an existing user")
 		resp.WriteHeader(http.StatusOK)
-		m := Message{"The solicited user does not exist"}
+		m := User{"The solicited user does not exist"}
 		t.Execute(resp, m)
 	}
 }
